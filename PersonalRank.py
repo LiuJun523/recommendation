@@ -30,7 +30,7 @@ class Dataset:
                 data_dict[user].add(item)
             return data_dict
 
-        return convert_dict(train_set[:10000]), convert_dict(test_set)
+        return convert_dict(train_set), convert_dict(test_set)
 
 
 class Metrics:
