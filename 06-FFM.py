@@ -42,12 +42,14 @@ class Dataset:
         return convert_dataframe(train_set), convert_dataframe(test_set)
 
 
-class fm:
+class ffm:
     def __init__(self, config):
         self.lr = config['lr']
+        self.batch_size = config['batch_size']
         self.reg = config['reg']
         self.latent_factors = config['latent_factors']
         self.features = config['features']
+        self.feature2field = config['feature2field']
         # build graph for model
         self.define_model()
 
@@ -63,15 +65,16 @@ class fm:
             w1 = tf.get_variable('w1', shape=[self.features, 2], initializer=tf.truncated_normal_initializer(stddev=0.2))
             self.linear_terms = tf.add(tf.sparse_tensor_dense_matmul(self.X, w1), b)
 
-        with tf.variable_scope('interaction_terms'):
+        with tf.variable_scope('field_aware_interaction_terms'):
             v = tf.get_variable('v', shape=[self.features, self.latent_factors], initializer=tf.truncated_normal_initializer(stddev=0.2))
-            self.interaction_terms = tf.multiply(0.5,
-                                                 tf.reduce_mean(
-                                                     tf.subtract(
-                                                         tf.pow(tf.sparse_tensor_dense_matmul(self.X, v), 2),
-                                                         tf.sparse_tensor_dense_matmul(self.X, tf.pow(v, 2))),
-                                                     1, keep_dims=True))
-        self.y_out = tf.add(self.linear_terms, self.interaction_terms)
+            self.field_aware_interaction_terms = tf.constant(0, dtype='float32')
+            for i in range(self.features):
+                for j in range(i + 1, self.features):
+                    self.field_aware_interaction_terms += tf.multiply(
+                        tf.reduce_sum(tf.multiply(v[i, self.feature2field[i]], v[j, self.feature2field[j]])),
+                        tf.multiply(self.X[:, i], self.X[:, j])
+                    )
+        self.y_out = tf.add(self.linear_terms, self.field_aware_interaction_terms)
         self.y_out_prob = tf.nn.softmax(self.y_out)
 
         # loss
@@ -117,12 +120,13 @@ if __name__ == '__main__':
     config['batch_size'] = 128
     config['epochs'] = 100
     config['reg'] = 0.1
-    config['latent_factors'] = 40
+    config['latent_factors'] = 4
     config['features'] = 2
+    config['feature2field'] = 2
     batches_per_epoch = len(train_df) // config['batch_size']
     save_path = './mf_model.ckpt'
-    # initialize FM model
-    model = fm(config)
+    # initialize FFM model
+    model = ffm(config)
 
     # train
     saver = tf.train.Saver(max_to_keep=5)
