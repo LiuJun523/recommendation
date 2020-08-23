@@ -76,18 +76,18 @@ class mf:
         # Calculate the difference between the predicted rates and the actual rates
         diff = tf.subtract(pred_rate, self.rate_batch, name="diff")
 
-        with tf.name_scope("cost") as scope:
+        with tf.name_scope("cost"):
             base_cost = tf.reduce_sum(tf.square(diff), name="sum_squared_error")
             cost = tf.div(tf.add(base_cost, regularizer), tf.to_float(tf.shape(self.rate_batch)[0] * 2), name="average_error")
 
-        with tf.name_scope("train") as scope:
+        with tf.name_scope("train"):
             # Use an exponentially decaying learning rate.
             global_step = tf.Variable(0, trainable=False)
             learning_rate = tf.train.exponential_decay(lr, global_step, 10000, 0.99, staircase=True)
             optimizer = tf.train.GradientDescentOptimizer(learning_rate)
             train_step = optimizer.minimize(cost, global_step=global_step)
 
-        with tf.name_scope("rmse") as scope:
+        with tf.name_scope("rmse"):
             rmse = tf.sqrt(tf.reduce_sum(tf.square(diff)) / tf.to_float(tf.shape(self.rate_batch)[0]))
 
         return pred_rate, cost, train_step, rmse
@@ -98,64 +98,64 @@ if __name__ == '__main__':
     dataset = Dataset(file_path)
     train_df, test_df = dataset.load_dataset()
 
-dim = 10
-lr = 0.01
-regularization = 0.1
-epochs = 300
-batch_size = 1000
-save_path = '/Users/jun/Desktop/Recommendation/06-Code/mf_model.ckpt'
+    dim = 10
+    lr = 0.01
+    regularization = 0.1
+    epochs = 300
+    batch_size = 1000
+    save_path = './mf_model.ckpt'
 
-batches_per_epoch = len(train_df) // batch_size
-# reindex user and item
-users = sorted(set(list(train_df.user.unique()) + list(test_df.user.unique())))
-user2id = {users[i]: i for i in range(len(users))}
-items = sorted(set(list(train_df.item.unique()) + list(test_df.item.unique())))
-item2id = {items[i]: i for i in range(len(items))}
+    batches_per_epoch = len(train_df) // batch_size
+    # reindex user and item
+    users = sorted(set(list(train_df.user.unique()) + list(test_df.user.unique())))
+    user2id = {users[i]: i for i in range(len(users))}
+    items = sorted(set(list(train_df.item.unique()) + list(test_df.item.unique())))
+    item2id = {items[i]: i for i in range(len(items))}
 
-mf_model = mf(train_df, test_df, user2id, item2id)
-pred_rate, cost, train_step, rmse = mf_model.model(dim, lr, regularization)
+    mf_model = mf(train_df, test_df, user2id, item2id)
+    pred_rate, cost, train_step, rmse = mf_model.model(dim, lr, regularization)
 
-# training
-saver = tf.train.Saver()
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    for i in range(epochs):
-        for j in range(batches_per_epoch):
-            # sample batch training set
-            batch_train = train_df.sample(n=batch_size)
-            users, items, rates = (batch_train.user.values, batch_train.item.values, batch_train.rate.values)
-            users = np.array([user2id[u] for u in users if u in user2id.keys()])
-            items = np.array([item2id[i] for i in items if i in item2id.keys()])
-            rates = np.array(rates, dtype=np.float32)
+    # training
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        for i in range(epochs):
+            for j in range(batches_per_epoch):
+                # sample batch training set
+                batch_train = train_df.sample(n=batch_size)
+                users, items, rates = (batch_train.user.values, batch_train.item.values, batch_train.rate.values)
+                users = np.array([user2id[u] for u in users if u in user2id.keys()])
+                items = np.array([item2id[i] for i in items if i in item2id.keys()])
+                rates = np.array(rates, dtype=np.float32)
 
-            # train
-            if j > 0 and j % 100 == 0:
-                tr_rmse, tr_cost = sess.run([rmse, cost], feed_dict={mf_model.user_batch: users,
-                                                                     mf_model.item_batch: items,
-                                                                     mf_model.rate_batch: rates})
-                print("Training RMSE at epoch %s of batch %s: %s" % (i, j, tr_rmse))
-            else:
-                sess.run(train_step, feed_dict={mf_model.user_batch: users,
-                                                mf_model.item_batch: items,
-                                                mf_model.rate_batch: rates})
+                # train
+                if j > 0 and j % 100 == 0:
+                    tr_rmse, tr_cost = sess.run([rmse, cost], feed_dict={mf_model.user_batch: users,
+                                                                         mf_model.item_batch: items,
+                                                                         mf_model.rate_batch: rates})
+                    print("Training RMSE at epoch %s of batch %s: %s" % (i, j, tr_rmse))
+                else:
+                    sess.run(train_step, feed_dict={mf_model.user_batch: users,
+                                                    mf_model.item_batch: items,
+                                                    mf_model.rate_batch: rates})
 
-    saver.save(sess, save_path)
-    print("Train done, model saved at path: ", save_path)
+        saver.save(sess, save_path)
+        print("Train done, model saved at path: ", save_path)
 
-# prediction
-saver = tf.train.Saver()
-with tf.Session() as sess:
-    saver.restore(sess, save_path)
+    # prediction
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        saver.restore(sess, save_path)
 
-    users, items, rates = (test_df.user.values, test_df.item.values, test_df.rate.values)
-    users = np.array([user2id[u] for u in users if u in user2id.keys()])
-    items = np.array([item2id[i] for i in items if i in item2id.keys()])
-    rates = np.array(rates, dtype=np.float32)
+        users, items, rates = (test_df.user.values, test_df.item.values, test_df.rate.values)
+        users = np.array([user2id[u] for u in users if u in user2id.keys()])
+        items = np.array([item2id[i] for i in items if i in item2id.keys()])
+        rates = np.array(rates, dtype=np.float32)
 
-    pred_rate, _ = sess.run(pred_rate, feed_dict={mf_model.user_batch: users,
-                                                  mf_model.item_batch: items,
-                                                  mf_model.rate_batch: rates})
+        pred_rate, _ = sess.run(pred_rate, feed_dict={mf_model.user_batch: users,
+                                                      mf_model.item_batch: items,
+                                                      mf_model.rate_batch: rates})
 
-    print("Predict\Actual")
-    for i in range(len(rates)):
-        print("%.3f\t%.3f" % (pred_rate[i], rates[i]))
+        print("Predict\Actual")
+        for i in range(len(rates)):
+            print("%.3f\t%.3f" % (pred_rate[i], rates[i]))
