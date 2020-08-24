@@ -94,8 +94,8 @@ class ffm:
         # train
         with tf.name_scope('train'):
             self.global_step = tf.Variable(0, trainable=False)
-            learning_rate = tf.train.exponential_decay(lr, self.global_step, 10000, 0.99, staircase=True)
-            optimizer = tf.train.AdagradOptimizer(self.lr)
+            learning_rate = tf.train.exponential_decay(self.lr, self.global_step, 10000, 0.99, staircase=True)
+            optimizer = tf.train.AdagradOptimizer(learning_rate)
             self.train_step = optimizer.minimize(self.loss, global_step=self.global_step)
 
 
@@ -115,17 +115,18 @@ if __name__ == '__main__':
     train_df, test_df = dataset.load_dataset()
 
     # initialize parameters
-    config = {}
-    config['lr'] = 0.01
-    config['batch_size'] = 128
-    config['epochs'] = 100
-    config['reg'] = 0.1
-    config['latent_factors'] = 4
-    config['features'] = 2
-    config['feature2field'] = 2
+    config = {
+        'lr': 0.01,
+        'batch_size': 100,
+        'epochs': 100,
+        'reg': 0.01,
+        'latent_factors': 40,
+        'features': 2,
+        'feature2field': 2
+    }
     batches_per_epoch = len(train_df) // config['batch_size']
     save_path = './mf_model.ckpt'
-    # initialize FFM model
+    # initialize model
     model = ffm(config)
 
     # train
@@ -156,6 +157,6 @@ if __name__ == '__main__':
                     print("Epoch %s of batch %s: loss = %s, accuracy = %s" % (i, j, loss, accuracy))
                     saver.save(sess, save_path, global_step=global_step)
 
-        # print total loss
-        total_loss = np.sum(losses) / num_samples
-        print("Epoch %s: overall loss = %s" % (i, total_loss))
+            # print total loss
+            total_loss = np.sum(losses) / num_samples
+            print("Epoch %s: overall loss = %s" % (i, total_loss))
