@@ -25,7 +25,7 @@ class Dataset:
         return data_df
 
 
-class gbdt_lr:
+class GBDT_LR:
     def __init__(self, data_df, continuous_features, category_features, params):
         self.data_df = data_df
         self.continuous_features = continuous_features
@@ -112,5 +112,5 @@ if __name__ == '__main__':
         'random_state': 1234
     }
 
-    model = gbdt_lr(data_df, continuous_features, category_features, params)
+    model = GBDT_LR(data_df, continuous_features, category_features, params)
     model.train()

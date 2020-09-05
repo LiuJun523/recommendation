@@ -23,7 +23,7 @@ class Dataset:
         return data_df
 
 
-class mlr:
+class MLR:
     def __init__(self, params):
         self.num_features = params['num_features']
         self.num_separators = params['num_separators']
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     batches_per_epoch = len(train_df) // params['batch_size']
     save_path = './mlr_model.ckpt'
     # initial model
-    model = mlr(params)
+    model = MLR(params)
 
     # train
     saver = tf.train.Saver()
