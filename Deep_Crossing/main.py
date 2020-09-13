@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from sklearn.preprocessing import StandardScaler
 
-import DeepCrossing
+import Deep_Crossing
 
 
 def load_dataset(file_path):
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         # define model
         cate_num = X_train_cate.shape[1]
         cont_num = X_train_cont.shape[1]
-        model = DeepCrossing(args, cate_num, cont_num, cate_list)
+        model = Deep_Crossing(args, cate_num, cont_num, cate_list)
         model.build()
 
         ckpt = tf.train.get_checkpoint_state(os.path.join(args.input_dir, args.model_name))

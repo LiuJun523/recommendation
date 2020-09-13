@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-class DeepCrossing:
+class Deep_Crossing:
     def __init__(self, args, cate_num, cont_num, cate_list):
         self.cate_num = cate_num
         self.cont_num = cont_num
@@ -55,7 +55,7 @@ class DeepCrossing:
                 out_dim = self.embed_size
                 embed_w = tf.get_variable(name='emb_w_%d' % i, shape=[in_dim, out_dim], dtype=tf.float32,
                                           regularizer=self.regularizer, initializer=self.initializer)
-                embed_cate.append(tf.nn.embedding_lookup(embed_w, self.X_cate[:, i]))
+                embed_cate.append(tf.nn.embedding_lookup_sparse(embed_w, self.X_cate[:, i]))
             embed_output = tf.concat(embed_cate, axis=1)
         # stacking layer
         with tf.variable_scope('stacking'):
@@ -90,7 +90,7 @@ class DeepCrossing:
             self.predict = tf.arg_max(self.y_out, 1)
 
     def summary(self):
-        self.writer = tf.summary.FileWriter('./graphs/DeepCrossing', tf.get_default_graph())
+        self.writer = tf.summary.FileWriter('./graphs/Deep_Crossing', tf.get_default_graph())
         with tf.variable_scope('summary', reuse=tf.AUTO_REUSE):
             tf.summary.scalar('loss', self.loss)
             tf.summary.histogram('histogram_loss', self.loss)
