@@ -2,15 +2,15 @@ import numpy as np
 import tensorflow as tf
 
 
-class DCN:
+class DeepFM:
     def __init__(self, args, cate_num, cont_num, cate_list):
         self.cate_num = cate_num
         self.cont_num = cont_num
         self.embed_size = args.embed_size
-        self.cross_layer_num = args.cross_layer_num
         self.deep_layers = args.deep_layers
         self.regular_rate = args.regular_rate
-        self.dropout = args.dropout
+        self.dropout_fm = args.dropout_fm
+        self.dropout_deep = args.dropout_deep
         self.learning_rate = args.learning_rate
         self.decay_steps = args.decay_steps
         self.decay_rate = args.decay_rate
@@ -50,43 +50,42 @@ class DCN:
                 embed = tf.nn.embedding_lookup(embed_w, onehot)
                 value_cate = tf.cast(tf.reshape(onehot, shape=[-1, in_dim, 1]), dtype=tf.float32)
                 embed_cate.append(tf.multiply(embed, value_cate))
-            embed_cate = tf.concat(embed_cate, axis=1)
-            embed_output = tf.concat([tf.reshape(embed_cate, shape=[-1, embed_cate.shape[1] * embed_cate.shape[2]]), self.X_cont], axis=1)
-        # cross part
-        with tf.variable_scope('cross_part'):
-            cross_x0 = tf.reshape(embed_output, shape=[-1, self.total_size, 1])
-            cross_xi = cross_x0
-            for i in range(self.cross_layer_num):
-                w = tf.get_variable(name='cross_w_%d' % i, shape=[self.total_size, 1], dtype=tf.float32,
-                                    regularizer=self.regularizer, initializer=self.initializer)
-                b = tf.get_variable(name='cross_b_%d' % i, shape=[self.total_size, 1], dtype=tf.float32,
-                                    initializer=self.initializer)
-                cross_xi = tf.tensordot(tf.matmul(cross_x0, cross_xi, transpose_b=True), w, 1) + b + cross_xi
-            cross_output = tf.reshape(cross_xi, [-1, self.total_size])
+            embed_output = tf.concat(embed_cate, axis=1)
+        # fm part
+        with tf.variable_scope('fm_part'):
+            # first order
+            first_order = tf.reduce_sum(embed_output, 2)
+            first_order = tf.layers.dropout(first_order, rate=self.dropout_fm, training=self.is_train)
+            # second order
+            sum_square = tf.square(tf.reduce_sum(embed_output, 1))
+            square_sum = tf.reduce_sum(tf.square(embed_output), 1)
+            second_order = 0.5 * tf.subtract(sum_square, square_sum)
+            second_order = tf.layers.dropout(second_order, rate=self.dropout_fm, training=self.is_train)
         # deep part
         with tf.variable_scope('deep_part'):
+            deep_input = tf.concat([tf.reshape(embed_output, shape=[-1, embed_output.shape[1] * embed_output.shape[2]]), self.X_cont], axis=1)
             w = tf.get_variable(name='deep_w_0', shape=[self.total_size, self.deep_layers[0]], dtype=tf.float32,
                                 regularizer=self.regularizer, initializer=self.initializer)
             b = tf.get_variable(name='deep_b_0', shape=[1, self.deep_layers[0]], dtype=tf.float32,
                                 initializer=self.initializer)
-            deep_x = self.activation_func(tf.matmul(embed_output, w) + b)
-            deep_x = tf.layers.dropout(deep_x, rate=self.dropout, training=self.is_train)
+            deep_x = self.activation_func(tf.matmul(deep_input, w) + b)
+            deep_x = tf.layers.dropout(deep_x, rate=self.dropout_deep, training=self.is_train)
             for i in range(1, len(self.deep_layers)):
                 w = tf.get_variable(name='deep_w_%d' % i, shape=[self.deep_layers[i - 1], self.deep_layers[i]], dtype=tf.float32,
                                     regularizer=self.regularizer, initializer=self.initializer)
                 b = tf.get_variable(name='deep_b_%d' % i, shape=[1, self.deep_layers[i]], dtype=tf.float32,
                                     initializer=self.initializer)
                 deep_x = self.activation_func(tf.matmul(deep_x, w) + b)
-                deep_x = tf.layers.dropout(deep_x, rate=self.dropout, training=self.is_train)
+                deep_x = tf.layers.dropout(deep_x, rate=self.dropout_deep, training=self.is_train)
             deep_output = deep_x
-        # stack layer
-        with tf.variable_scope('stack_layer'):
-            stack_input = tf.concat([cross_output, deep_output], axis=1)
-            w = tf.get_variable(name='stack_w_%d' % i, shape=[stack_input.shape[1], 1], dtype=tf.float32,
+        # output unit
+        with tf.variable_scope('output_unit'):
+            concat_input = tf.concat([first_order, second_order, deep_output], axis=1)
+            w = tf.get_variable(name='output_w_%d' % i, shape=[concat_input.shape[1], 1], dtype=tf.float32,
                                 regularizer=self.regularizer, initializer=self.initializer)
-            b = tf.get_variable(name='stack_b_%d' % i, shape=[1, ], dtype=tf.float32,
+            b = tf.get_variable(name='output_b_%d' % i, shape=[1, ], dtype=tf.float32,
                                 initializer=self.initializer)
-            self.y_out = tf.reshape(tf.sigmoid(tf.matmul(stack_input, w) + b), shape=[-1, ])
+            self.y_out = tf.reshape(tf.sigmoid(tf.matmul(concat_input, w) + b), shape=[-1, ])
         # loss
         with tf.variable_scope('loss'):
             self.loss = tf.losses.log_loss(self.y, self.y_out)
@@ -106,7 +105,7 @@ class DCN:
             self.predict = tf.round(self.y_out)
 
     def summary(self):
-        self.writer = tf.summary.FileWriter('./graphs/DCN', tf.get_default_graph())
+        self.writer = tf.summary.FileWriter('./graphs/DeepFM', tf.get_default_graph())
         with tf.variable_scope('summary', reuse=tf.AUTO_REUSE):
             tf.summary.scalar('loss', self.loss)
             tf.summary.histogram('histogram_loss', self.loss)

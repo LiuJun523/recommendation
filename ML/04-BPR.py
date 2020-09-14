@@ -98,7 +98,7 @@ class Metrics:
         return metrics
 
 
-class PersonalRank:
+class BPR:
     def __init__(self, train_dict, test_dict, alpha, n_rec):
         self.graph = None
         self.id2item = []
@@ -172,8 +172,8 @@ if __name__ == '__main__':
     dataset = Dataset(file_path)
     train_dict, test_dict = dataset.load_dataset()
 
-    # Personal Rank
-    pr = PersonalRank(train_dict, test_dict, n_rec=100)
+    # BPR
+    pr = BPR(train_dict, test_dict, n_rec=100)
     pred_dict = pr.predict()
     metrics = Metrics(train_dict, test_dict, pred_dict)
     metrics.evaluate()
