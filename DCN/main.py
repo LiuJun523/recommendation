@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from sklearn.preprocessing import StandardScaler
 
-import PNN
+import DCN
 
 
 def load_dataset(file_path):
@@ -46,11 +46,10 @@ def load_dataset(file_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', help='The directory of input', type=str, default='')
-    parser.add_argument('--model_name', help='The directory of model', type=str, default='PNN.ckpt')
-    parser.add_argument('--inner_product', help='use inner or outer', type=bool, default=True)
+    parser.add_argument('--model_name', help='The directory of model', type=str, default='DCN.ckpt')
     parser.add_argument('--embed_size', help='size for embedding user and item', type=int, default=8)
-    parser.add_argument('--product_size', help='size for prodcut layer', type=int, default=50)
-    parser.add_argument('--hidden_layers', help='hidden layers', type=list, default=[32, 64, 128])
+    parser.add_argument('--cross_layer_num', help='number of cross layer', type=int, default=3)
+    parser.add_argument('--deep_layers', help='deep layers', type=list, default=[256, 128, 64, 32])
     parser.add_argument('--batch_size', help='size of mini-batch', type=int, default=128)
     parser.add_argument('--epoch', help='number of epochs', type=int, default=10)
     parser.add_argument('--regular_rate', help='regular rate', type=float, default=0.1)
@@ -69,7 +68,7 @@ if __name__ == '__main__':
     tf.reset_default_graph()
     with tf.Session() as sess:
         # define model
-        model = PNN(args, cate_num, cont_num, cate_list)
+        model = DCN(args, cate_num, cont_num, cate_list)
         model.build()
 
         ckpt = tf.train.get_checkpoint_state(os.path.join(args.input_dir, args.model_name))

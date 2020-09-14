@@ -45,8 +45,8 @@ def load_dataset(file_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_dir', help='The directory of input', type=str, default='/Users/jun/Desktop/Recommendation/06-Code')
-    parser.add_argument('--model_name', help='The directory of model', type=str, default='DeepCrossing.ckpt')
+    parser.add_argument('--input_dir', help='The directory of input', type=str, default='')
+    parser.add_argument('--model_name', help='The directory of model', type=str, default='Deep_Crossing.ckpt')
     parser.add_argument('--redisual_num', help='number of residual unit', type=int, default=2)
     parser.add_argument('--embed_size', help='size for embedding user and item', type=int, default=16)
     parser.add_argument('--residual_size', help='size for residual unit', type=int, default=128)

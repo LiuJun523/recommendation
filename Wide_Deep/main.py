@@ -79,8 +79,8 @@ def load_dataset(file_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_dir', help='The directory of input', type=str, default='/Users/jun/Desktop/Recommendation/06-Code')
-    parser.add_argument('--model_name', help='The directory of model', type=str, default='DeepCrossing.ckpt')
+    parser.add_argument('--input_dir', help='The directory of input', type=str, default='')
+    parser.add_argument('--model_name', help='The directory of model', type=str, default='Wide_Deep.ckpt')
     parser.add_argument('--embed_size', help='size for embedding user and item', type=int, default=8)
     parser.add_argument('--hidden_layers', help='hidden layers', type=list, default=[32, 64, 128])
     parser.add_argument('--batch_size', help='size of mini-batch', type=int, default=128)
