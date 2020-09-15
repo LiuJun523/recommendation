@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from sklearn.preprocessing import StandardScaler
 
-import NFM
+import AFM
 
 
 def load_dataset(file_path):
@@ -46,15 +46,14 @@ def load_dataset(file_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', help='The directory of input', type=str, default='')
-    parser.add_argument('--model_name', help='The directory of model', type=str, default='NFM.ckpt')
+    parser.add_argument('--model_name', help='The directory of model', type=str, default='AFM.ckpt')
     parser.add_argument('--embed_size', help='size for embedding user and item', type=int, default=8)
-    parser.add_argument('--deep_layers', help='deep layers', type=list, default=[256, 128, 64, 32])
+    parser.add_argument('--attention_size', help='size for attention', type=int, default=10)
     parser.add_argument('--batch_size', help='size of mini-batch', type=int, default=128)
     parser.add_argument('--epoch', help='number of epochs', type=int, default=10)
     parser.add_argument('--regular_rate', help='regular rate', type=float, default=0.1)
     parser.add_argument('--learning_rate', help='learning rate', type=float, default=0.001)
-    parser.add_argument('--dropout_bi', help='dropout rate', type=float, default=0.5)
-    parser.add_argument('--dropout_deep', help='dropout rate', type=float, default=0.2)
+    parser.add_argument('--dropout', help='dropout rate', type=float, default=0.2)
     parser.add_argument('--decay_steps', help='decay steps', type=int, default=10000)
     parser.add_argument('--decay_rate', help='decay rate', type=float, default=0.99)
     args = parser.parse_args(args=[])
@@ -68,7 +67,7 @@ if __name__ == '__main__':
     tf.reset_default_graph()
     with tf.Session() as sess:
         # define model
-        model = NFM(args, cate_num, cont_num, cate_list)
+        model = AFM(args, cate_num, cont_num, cate_list)
         model.build()
 
         ckpt = tf.train.get_checkpoint_state(os.path.join(args.input_dir, args.model_name))
