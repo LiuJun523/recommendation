@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from sklearn.preprocessing import StandardScaler
 
-import Wide_Deep
+from Wide_Deep import Wide_Deep
 
 
 def cross_columns(x_cols):
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     tf.reset_default_graph()
     with tf.Session() as sess:
         # define model
-        model = Wide_Deep(args, cross_num, cate_num, cont_num, cross_list, cate_list)
+        model = Wide_Deep.Wide_Deep(args, cross_num, cate_num, cont_num, cross_list, cate_list)
         model.build()
 
         ckpt = tf.train.get_checkpoint_state(os.path.join(args.input_dir, args.model_name))

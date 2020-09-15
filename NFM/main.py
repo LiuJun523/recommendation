@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from sklearn.preprocessing import StandardScaler
 
-import NFM
+from NFM import NFM
 
 
 def load_dataset(file_path):
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     tf.reset_default_graph()
     with tf.Session() as sess:
         # define model
-        model = NFM(args, cate_num, cont_num, cate_list)
+        model = NFM.NFM(args, cate_num, cont_num, cate_list)
         model.build()
 
         ckpt = tf.train.get_checkpoint_state(os.path.join(args.input_dir, args.model_name))

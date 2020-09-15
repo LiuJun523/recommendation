@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from sklearn.preprocessing import StandardScaler
 
-import PNN
+from PNN import PNN
 
 
 def load_dataset(file_path):
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     tf.reset_default_graph()
     with tf.Session() as sess:
         # define model
-        model = PNN(args, cate_num, cont_num, cate_list)
+        model = PNN.PNN(args, cate_num, cont_num, cate_list)
         model.build()
 
         ckpt = tf.train.get_checkpoint_state(os.path.join(args.input_dir, args.model_name))
